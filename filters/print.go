@@ -7,14 +7,14 @@ import (
 	"github.com/joscha-alisch/http4go/http"
 )
 
-func PrintRequestAndResponse(to io.Writer) http.Filter {
-	return PrintRequest(to).Then(PrintResponse(to))
+func PrintRequestAndResponse(to io.Writer, includeStream bool) http.Filter {
+	return PrintRequest(to, includeStream).Then(PrintResponse(to, includeStream))
 }
 
-func PrintRequest(to io.Writer) http.Filter {
+func PrintRequest(to io.Writer, includeStream bool) http.Filter {
 	return func(next http.Handler) http.Handler {
 		return func(req http.Request) (http.Response, error) {
-			_, err := fmt.Fprintln(to, req.ToMessage())
+			_, err := fmt.Fprintln(to, req.ToMessage(includeStream))
 			if err != nil {
 				return nil, err
 			}
@@ -23,7 +23,7 @@ func PrintRequest(to io.Writer) http.Filter {
 	}
 }
 
-func PrintResponse(to io.Writer) http.Filter {
+func PrintResponse(to io.Writer, includeStream bool) http.Filter {
 	return func(next http.Handler) http.Handler {
 		return func(req http.Request) (http.Response, error) {
 			resp, err := next(req)
@@ -31,7 +31,7 @@ func PrintResponse(to io.Writer) http.Filter {
 				return nil, err
 			}
 
-			_, err = fmt.Fprintln(to, resp.ToMessage())
+			_, err = fmt.Fprintln(to, resp.ToMessage(includeStream))
 			if err != nil {
 				return nil, err
 			}

@@ -17,7 +17,7 @@ func helloWorld(r http.Request) (http.Response, error) {
 func App() http.Handler {
 	return http.Routes{
 		"/": {
-			method.GET: filters.PrintRequestAndResponse(os.Stdout).Apply(helloWorld),
+			method.GET: filters.PrintRequestAndResponse(os.Stdout, true).Apply(helloWorld),
 		},
 	}.AsHandler()
 }

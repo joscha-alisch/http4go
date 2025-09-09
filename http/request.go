@@ -3,6 +3,7 @@ package http
 import (
 	"io"
 
+	"github.com/joscha-alisch/http4go/http/body"
 	"github.com/joscha-alisch/http4go/http/method"
 	"github.com/joscha-alisch/http4go/http/uri"
 )
@@ -17,7 +18,7 @@ type Request interface {
 	// GetUri returns the URI of this request.
 	GetUri() uri.Uri
 
-	ToMessage() string
+	ToMessage(includeStream bool) string
 
 	// Version sets the HTTP version of this message.
 	Version(version string) Request
@@ -56,10 +57,7 @@ type Request interface {
 	GetHeaderValues(name string) []string
 
 	// GetBody returns the body of this message as an io.Reader.
-	GetBody() io.ReadCloser
-
-	// GetBodyString returns the body of this message as a string.
-	GetBodyString() string
+	GetBody() body.Body
 
 	// Close closes the body of this message.
 	Close() error
@@ -147,6 +145,6 @@ func (r MemoryRequest) Query(name, value string) Request {
 	return r
 }
 
-func (r MemoryRequest) ToMessage() string {
-	return ">>>>>>>> REQUEST\n" + r.method + " " + r.uri.GetFullPath() + " " + r.version + "\n" + r.memoryMessage.ToMessage()
+func (r MemoryRequest) ToMessage(includeStream bool) string {
+	return ">>>>>>>> REQUEST\n" + r.method + " " + r.uri.GetFullPath() + " " + r.version + "\n" + r.memoryMessage.ToMessage(includeStream)
 }

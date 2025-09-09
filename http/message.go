@@ -1,20 +1,24 @@
 package http
 
 import (
-	"bytes"
 	"fmt"
 	"io"
-	"strings"
+
+	"github.com/joscha-alisch/http4go/http/body"
 )
 
 type memoryMessage struct {
 	version string
 	headers Headers
-	body    io.ReadCloser
+	body    body.Body
 }
 
-func (m memoryMessage) ToMessage() string {
-	return fmt.Sprintf("%s\n%s", m.headers.String(), m.GetBodyString())
+func (m memoryMessage) ToMessage(includeStream bool) string {
+	if m.body.IsStream() && !includeStream {
+		return fmt.Sprintf("%s\n<stream>", m.headers.String())
+	}
+
+	return fmt.Sprintf("%s\n%s", m.headers.String(), m.body.String())
 }
 
 func (m memoryMessage) Version(version string) memoryMessage {
@@ -66,13 +70,13 @@ func (m memoryMessage) RemoveHeaders(prefix string) memoryMessage {
 	return m
 }
 
-func (m memoryMessage) Body(body io.ReadCloser) memoryMessage {
-	m.body = body
+func (m memoryMessage) Body(r io.ReadCloser) memoryMessage {
+	m.body = body.FromStream(r)
 	return m
 }
 
-func (m memoryMessage) BodyString(body string) memoryMessage {
-	m.body = io.NopCloser(io.Reader(strings.NewReader(body)))
+func (m memoryMessage) BodyString(s string) memoryMessage {
+	m.body = body.FromString(s)
 	return m
 }
 
@@ -90,22 +94,8 @@ func (m memoryMessage) GetHeaderValues(name string) []string {
 	return values
 }
 
-func (m memoryMessage) GetBody() io.ReadCloser {
+func (m memoryMessage) GetBody() body.Body {
 	return m.body
-}
-
-func (m memoryMessage) GetBodyString() string {
-	if m.body == nil {
-		return ""
-	}
-
-	b, err := io.ReadAll(m.body)
-	if err != nil {
-		return ""
-	}
-	m.body = io.NopCloser(bytes.NewBuffer(b))
-
-	return string(b)
 }
 
 func (m memoryMessage) Close() error {

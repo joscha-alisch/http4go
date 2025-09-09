@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/joscha-alisch/http4go/http/body"
 	"github.com/joscha-alisch/http4go/http/status"
 )
 
@@ -11,7 +12,7 @@ type Response interface {
 	Status(s status.Status) Response
 	GetStatus() status.Status
 
-	ToMessage() string
+	ToMessage(includeStream bool) string
 
 	// Version sets the HTTP version of this message.
 	Version(version string) Response
@@ -50,10 +51,7 @@ type Response interface {
 	GetHeaderValues(name string) []string
 
 	// GetBody returns the body of this message as an io.Reader.
-	GetBody() io.ReadCloser
-
-	// GetBodyString returns the body of this message as a string.
-	GetBodyString() string
+	GetBody() body.Body
 
 	// Close closes the body of this message.
 	Close() error
@@ -126,6 +124,6 @@ func (r MemoryResponse) BodyString(body string) Response {
 	return r
 }
 
-func (r MemoryResponse) ToMessage() string {
-	return fmt.Sprintf("<<<<<<<< RESPONSE\n%s %d %s %s", r.version, r.status.Code, r.status.Text, r.memoryMessage.ToMessage())
+func (r MemoryResponse) ToMessage(includeStream bool) string {
+	return fmt.Sprintf("<<<<<<<< RESPONSE\n%s %d %s %s", r.version, r.status.Code, r.status.Text, r.memoryMessage.ToMessage(includeStream))
 }
