@@ -1,6 +1,9 @@
 package uri
 
-import "regexp"
+import (
+	"fmt"
+	"regexp"
+)
 
 var authorityRegex = regexp.MustCompile("(?:([^@]+)@)?([^:]+)(?::([\\d]+))?")
 var rfc3986Regex = regexp.MustCompile("^(?:([^:/?#]+):)?(?://([^/?#]*))?([^?#]*)(?:\\?([^#]*))?(?:#(.*))?")
@@ -74,7 +77,7 @@ func (u Uri) GetFragment() string {
 
 func (u Uri) GetHostPort() string {
 	if u.port != 0 {
-		return u.host + ":" + string(u.port)
+		return fmt.Sprintf("%s:%d", u.host, u.port)
 	}
 	return u.host
 }
