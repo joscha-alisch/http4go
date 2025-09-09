@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strings"
@@ -97,10 +98,13 @@ func (m memoryMessage) GetBodyString() string {
 	if m.body == nil {
 		return ""
 	}
+
 	b, err := io.ReadAll(m.body)
 	if err != nil {
 		return ""
 	}
+	m.body = io.NopCloser(bytes.NewBuffer(b))
+
 	return string(b)
 }
 
