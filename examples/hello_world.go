@@ -1,21 +1,27 @@
 package main
 
 import (
+	"os"
+
+	"github.com/joscha-alisch/http4go/filters"
 	"github.com/joscha-alisch/http4go/http"
 	"github.com/joscha-alisch/http4go/http/method"
+	"github.com/joscha-alisch/http4go/http/status"
 	"github.com/joscha-alisch/http4go/servers"
 )
 
-func HelloWorld() http.Handler {
+func helloWorld(r http.Request) (http.Response, error) {
+	return http.NewResponse(status.Ok).BodyString("Hello, World!"), nil
+}
+
+func App() http.Handler {
 	return http.Routes{
 		"/": {
-			method.GET: func(r http.Request) (http.Response, error) {
-				return http.NewResponse(200).BodyString("Hello, World!"), nil
-			},
+			method.GET: filters.PrintRequestAndResponse(os.Stdout).Apply(helloWorld),
 		},
 	}.AsHandler()
 }
 
 func main() {
-	panic(HelloWorld().AsServer(servers.StdLib(8080)).StartBlocking())
+	panic(App().AsServer(servers.StdLib(8080)).StartBlocking())
 }

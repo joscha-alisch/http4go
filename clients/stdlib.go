@@ -5,18 +5,16 @@ import (
 	"net/url"
 
 	"github.com/joscha-alisch/http4go/http"
+	"github.com/joscha-alisch/http4go/http/status"
+	"github.com/joscha-alisch/http4go/http/uri"
 )
 
 var StdLib = http.Handler(func(r http.Request) (http.Response, error) {
 	client := nethttp.Client{}
-	parsedUrl, err := url.Parse(r.GetUri())
-	if err != nil {
-		return nil, err
-	}
 
 	resp, err := client.Do(&nethttp.Request{
 		Method: r.GetMethod(),
-		URL:    parsedUrl,
+		URL:    urlFromUri(r.GetUri()),
 		Header: nil,
 		Body:   nil,
 	})
@@ -24,6 +22,19 @@ var StdLib = http.Handler(func(r http.Request) (http.Response, error) {
 		return nil, err
 	}
 
-	return http.NewResponse(resp.StatusCode).
-		Body(resp.Body), nil
+	return http.NewResponse(status.Status{
+		Code: resp.StatusCode,
+		Text: resp.Status,
+	}).Body(resp.Body), nil
 })
+
+func urlFromUri(u uri.Uri) *url.URL {
+	return &url.URL{
+		Scheme:   u.GetScheme(),
+		User:     nil,
+		Host:     u.GetHostPort(),
+		Path:     u.GetPath(),
+		RawQuery: u.GetQuery(),
+		Fragment: u.GetFragment(),
+	}
+}

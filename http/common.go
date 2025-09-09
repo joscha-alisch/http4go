@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/joscha-alisch/http4go/http/method"
+	"github.com/joscha-alisch/http4go/http/status"
 )
 
 type Header struct {
@@ -9,6 +10,14 @@ type Header struct {
 	Value string
 }
 type Headers []Header
+
+func (h Headers) String() string {
+	result := ""
+	for _, header := range h {
+		result += header.Name + ": " + header.Value + "\r\n"
+	}
+	return result
+}
 
 type StringBody string
 
@@ -18,13 +27,13 @@ type Routes map[string]Route
 
 func (r Routes) AsHandler() Handler {
 	return func(request Request) (Response, error) {
-		route, ok := r[request.GetUri()]
+		route, ok := r[request.GetUri().GetPath()]
 		if !ok {
-			return NewResponse(404).BodyString("Not Found"), nil
+			return NewResponse(status.NotFound).BodyString("Not Found"), nil
 		}
 		handler, ok := route[request.GetMethod()]
 		if !ok {
-			return NewResponse(405).BodyString("Method Not Allowed"), nil
+			return NewResponse(status.NotFound).BodyString("Method Not Allowed"), nil
 		}
 		return handler(request)
 	}

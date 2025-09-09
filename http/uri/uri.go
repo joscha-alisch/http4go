@@ -71,3 +71,25 @@ func (u Uri) GetQuery() string {
 func (u Uri) GetFragment() string {
 	return u.fragment
 }
+
+func (u Uri) GetHostPort() string {
+	if u.port != 0 {
+		return u.host + ":" + string(u.port)
+	}
+	return u.host
+}
+
+func (u Uri) GetFullPath() string {
+	result := u.path
+	if u.query != "" {
+		result += "?" + u.query
+	}
+
+	if u.fragment != "" {
+		result += "#" + u.fragment
+	}
+	return result
+}
+func (u Uri) String() string {
+	return u.scheme + "://" + u.GetHostPort() + u.GetFullPath()
+}

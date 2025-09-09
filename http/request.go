@@ -143,6 +143,10 @@ func (r MemoryRequest) Uri(uri uri.Uri) Request {
 }
 
 func (r MemoryRequest) Query(name, value string) Request {
-	r.uri = r.uri + "?" + name + "=" + value
+	r.uri = r.uri.Query(r.uri.GetQuery() + "&" + name + "=" + value)
 	return r
+}
+
+func (r MemoryRequest) ToMessage() string {
+	return ">>>>>>>> REQUEST\n" + r.method + " " + r.uri.GetFullPath() + " " + r.version + "\n" + r.memoryMessage.ToMessage()
 }

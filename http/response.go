@@ -1,10 +1,15 @@
 package http
 
-import "io"
+import (
+	"fmt"
+	"io"
+
+	"github.com/joscha-alisch/http4go/http/status"
+)
 
 type Response interface {
-	Status(code int) Response
-	GetStatus() int
+	Status(s status.Status) Response
+	GetStatus() status.Status
 
 	ToMessage() string
 
@@ -56,10 +61,10 @@ type Response interface {
 
 type MemoryResponse struct {
 	memoryMessage
-	status int
+	status status.Status
 }
 
-func NewResponse(status int) Response {
+func NewResponse(status status.Status) Response {
 	return MemoryResponse{
 		memoryMessage: memoryMessage{
 			version: "HTTP/1.1",
@@ -67,12 +72,12 @@ func NewResponse(status int) Response {
 	}.Status(status)
 }
 
-func (r MemoryResponse) Status(code int) Response {
-	r.status = code
+func (r MemoryResponse) Status(status status.Status) Response {
+	r.status = status
 	return r
 }
 
-func (r MemoryResponse) GetStatus() int {
+func (r MemoryResponse) GetStatus() status.Status {
 	return r.status
 }
 
@@ -119,4 +124,8 @@ func (r MemoryResponse) Body(body io.ReadCloser) Response {
 func (r MemoryResponse) BodyString(body string) Response {
 	r.memoryMessage = r.memoryMessage.BodyString(body)
 	return r
+}
+
+func (r MemoryResponse) ToMessage() string {
+	return fmt.Sprintf("<<<<<<<< RESPONSE\n%s %d %s %s", r.version, r.status.Code, r.status.Text, r.memoryMessage.ToMessage())
 }

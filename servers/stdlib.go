@@ -6,6 +6,7 @@ import (
 	nethttp "net/http"
 
 	"github.com/joscha-alisch/http4go/http"
+	"github.com/joscha-alisch/http4go/http/uri"
 )
 
 func StdLib(port int) *StdlibServerConfig {
@@ -42,14 +43,27 @@ func (s *stdLibServer) Start() http.Server {
 
 func (s *stdLibServer) StartBlocking() error {
 	return nethttp.ListenAndServe(fmt.Sprintf(":%d", s.port), nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
-		req := http.NewRequest().Method(r.Method).Uri(r.URL.String())
+		req := http.NewRequest().Method(r.Method).Uri(
+			uri.NewUri().
+				Scheme("http").
+				Host(r.Host).
+				Path(r.URL.Path)).Body(r.Body)
+
+		headers := make(http.Headers, 0)
+		for key, values := range r.Header {
+			for _, value := range values {
+				headers = append(headers, http.Header{Name: key, Value: value})
+			}
+		}
+
+		req = req.Headers(headers)
 
 		res, err := s.handler(req)
 		if err != nil {
 			panic(err)
 		}
 
-		w.WriteHeader(res.GetStatus())
+		w.WriteHeader(res.GetStatus().Code)
 		_, _ = io.Copy(w, res.GetBody())
 	}))
 }

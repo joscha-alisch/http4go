@@ -13,7 +13,7 @@ type memoryMessage struct {
 }
 
 func (m memoryMessage) ToMessage() string {
-	return fmt.Sprintf("HTTP/%s\nHeaders: %v\nBody: %v", m.version, m.headers, m.body)
+	return fmt.Sprintf("%s\n%s", m.headers.String(), m.GetBodyString())
 }
 
 func (m memoryMessage) Version(version string) memoryMessage {
