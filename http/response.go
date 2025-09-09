@@ -50,7 +50,7 @@ type Response interface {
 	GetHeaderValues(name string) []string
 
 	// GetBody returns the body of this message as an io.Reader.
-	GetBody() io.Reader
+	GetBody() io.ReadCloser
 
 	// GetBodyString returns the body of this message as a string.
 	GetBodyString() string

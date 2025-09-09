@@ -19,6 +19,14 @@ func (h Headers) String() string {
 	return result
 }
 
+func (h Headers) AsMap() map[string][]string {
+	result := make(map[string][]string)
+	for _, header := range h {
+		result[header.Name] = append(result[header.Name], header.Value)
+	}
+	return result
+}
+
 type StringBody string
 
 type Route map[method.Method]Handler

@@ -15,8 +15,8 @@ var StdLib = http.Handler(func(r http.Request) (http.Response, error) {
 	resp, err := client.Do(&nethttp.Request{
 		Method: r.GetMethod(),
 		URL:    urlFromUri(r.GetUri()),
-		Header: nil,
-		Body:   nil,
+		Header: r.GetHeaders().AsMap(),
+		Body:   r.GetBody(),
 	})
 	if err != nil {
 		return nil, err

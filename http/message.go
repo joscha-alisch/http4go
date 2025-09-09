@@ -90,7 +90,7 @@ func (m memoryMessage) GetHeaderValues(name string) []string {
 	return values
 }
 
-func (m memoryMessage) GetBody() io.Reader {
+func (m memoryMessage) GetBody() io.ReadCloser {
 	return m.body
 }
 
