@@ -14,11 +14,17 @@ type memoryMessage struct {
 }
 
 func (m memoryMessage) ToMessage(includeStream bool) string {
-	if m.body.IsStream() && !includeStream {
-		return fmt.Sprintf("%s\n<stream>", m.headers.String())
+	var headers = m.headers.String() + "\n"
+
+	if m.body == nil {
+		return headers
 	}
 
-	return fmt.Sprintf("%s\n%s", m.headers.String(), m.body.String())
+	if m.body.IsStream() && !includeStream {
+		return fmt.Sprintf("%s<stream>", headers)
+	}
+
+	return fmt.Sprintf("%s", headers, m.body.String())
 }
 
 func (m memoryMessage) Version(version string) memoryMessage {
