@@ -3,6 +3,7 @@ package uri
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 )
 
 var authorityRegex = regexp.MustCompile("(?:([^@]+)@)?([^:]+)(?::([\\d]+))?")
@@ -15,10 +16,34 @@ type Uri struct {
 	path     string
 	query    string
 	fragment string
+	userinfo string
 }
 
 func NewUri() Uri {
 	return Uri{}
+}
+
+func Of(s string) (Uri, error) {
+	matches := rfc3986Regex.FindStringSubmatch(s)
+	authority := matches[2]
+	authMatches := authorityRegex.FindStringSubmatch(authority)
+
+	portStr := authMatches[3]
+	port := 0
+	if portStr != "" {
+		port, _ = strconv.Atoi(portStr)
+	}
+	u := Uri{
+		scheme:   matches[1],
+		host:     authMatches[2],
+		port:     port,
+		path:     matches[3],
+		query:    matches[4],
+		fragment: matches[5],
+		userinfo: authMatches[1],
+	}
+
+	return u, nil
 }
 
 func (u Uri) Scheme(scheme string) Uri {
