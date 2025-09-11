@@ -9,3 +9,9 @@ type Server interface {
 type ServerConfig interface {
 	ToServer(Handler) Server
 }
+
+type PolyServerConfig interface {
+	ServerConfig
+	ToSseServer(SseHandler) Server
+	ToPolyServer(Handler, SseHandler) Server
+}
