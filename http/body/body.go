@@ -1,60 +1,40 @@
 package body
 
 import (
-	"bytes"
+	"encoding/json"
 	"io"
 )
 
 type Body interface {
-	io.ReadCloser
-	String() string
-	IsStream() bool
-}
+	// Next returns the next chunk of the body, consuming it.
+	// If the body is not a stream, Next always returns the full body.
+	Next() Chunk
 
-type memoryBackedBody struct {
-	io.ReadCloser
-	cached   []byte
-	isStream bool
+	// Peek returns a reader that can be used to read the next chunk of the body without consuming it -
+	// useful for debugging and logging. If the body is not a stream, Peek always returns the full body.
+	Peek() Chunk
 }
 
 func FromBytes(b []byte) Body {
-	return &memoryBackedBody{
-		ReadCloser: io.NopCloser(bytes.NewBuffer(b)),
-		cached:     b,
-		isStream:   false,
-	}
+	return &memoryBody{b}
 }
 
 func FromString(s string) Body {
 	return FromBytes([]byte(s))
 }
 
-func FromStream(r io.ReadCloser) Body {
-	return &memoryBackedBody{
-		ReadCloser: r,
-		cached:     nil,
-		isStream:   true,
-	}
-}
-
-func (b *memoryBackedBody) String() string {
-	if b.cached != nil {
-		return string(b.cached)
-	}
-
-	if b.ReadCloser == nil {
-		return ""
-	}
-
-	data, err := io.ReadAll(b.ReadCloser)
+func FromJson(v any) (Body, error) {
+	b, err := json.Marshal(v)
 	if err != nil {
-		return ""
+		return nil, err
 	}
-	b.cached = data
-	b.ReadCloser = io.NopCloser(bytes.NewBuffer(b.cached))
-	return string(data)
+	return FromBytes(b), nil
 }
 
-func (b *memoryBackedBody) IsStream() bool {
-	return b.isStream
+func FromReader(r io.Reader) Body {
+	return &readerBody{r: r}
+}
+
+func FromStream(f func() (io.Reader, error)) Body {
+	return &streamingBody{f: f}
 }
