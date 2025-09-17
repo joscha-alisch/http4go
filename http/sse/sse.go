@@ -11,11 +11,15 @@ type SseMessage struct {
 	Data  []byte
 }
 
-func Stream(f func() (SseMessage, error)) func() (io.ReadCloser, error) {
+func Stream(f func() (*SseMessage, error)) func() (io.ReadCloser, error) {
 	return func() (io.ReadCloser, error) {
 		msg, err := f()
 		if err != nil {
 			return nil, err
+		}
+
+		if msg == nil {
+			return nil, nil
 		}
 
 		var b strings.Builder
