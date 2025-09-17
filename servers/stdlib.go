@@ -102,10 +102,13 @@ func (s *stdLibServer) startHttpServer() error {
 		for {
 			chunk := res.GetBody().Next()
 			_, err = io.Copy(w, chunk)
-
+			if err != nil {
+				panic(err)
+			}
 			if f, ok := w.(nethttp.Flusher); ok {
 				f.Flush()
 			}
+
 			if chunk.IsDone() {
 				return
 			}

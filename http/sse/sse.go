@@ -1,6 +1,8 @@
 package sse
 
 import (
+	"bufio"
+	"errors"
 	"io"
 	"strings"
 
@@ -14,17 +16,55 @@ type Message struct {
 }
 
 func StreamFromBody(body body.Body) func() (*Message, error) {
+	r := bufio.NewReader(&chunkedReader{body: body})
+
 	return func() (*Message, error) {
-		bodyChunk := body.Next()
-		if bodyChunk == nil || bodyChunk.IsDone() {
-			return nil, nil
+		return readMessage(r)
+	}
+}
+
+func readMessage(r *bufio.Reader) (*Message, error) {
+	var msg *Message
+	for {
+		line, err := r.ReadString('\n')
+		if len(line) > 0 {
+			s := strings.TrimRight(line, "\r\n")
+			if s == "" {
+				if msg != nil {
+					return msg, nil
+				}
+				continue
+			}
+
+			if msg == nil {
+				msg = &Message{}
+			}
+
+			switch {
+			case strings.HasPrefix(s, "id: "):
+				msg.Id = strings.TrimPrefix(s, "id: ")
+			case strings.HasPrefix(s, "event: "):
+				msg.Event = strings.TrimPrefix(s, "event: ")
+			case strings.HasPrefix(s, "data: "):
+				if len(msg.Data) > 0 {
+					msg.Data = append(msg.Data, '\n')
+				}
+				msg.Data = append(msg.Data, s[len("data: "):]...)
+				// You can add support for "retry:" etc. here if needed.
+			}
 		}
 
-		msg, err := readMessage(bodyChunk)
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				if msg != nil {
+					out := msg
+					msg = nil
+					return out, nil
+				}
+				return nil, nil
+			}
 			return nil, err
 		}
-		return msg, nil
 	}
 }
 
@@ -62,25 +102,36 @@ func Stream(f func() (*Message, error)) func() (io.ReadCloser, error) {
 	}
 }
 
-func readMessage(chunk io.Reader) (*Message, error) {
-	msg := &Message{}
+type chunkedReader struct {
+	body body.Body
+	cur  io.ReadCloser
+	done bool
+}
 
-	b, err := io.ReadAll(chunk)
-	if err != nil {
-		return nil, err
-	}
-
-	for line := range strings.Lines(string(b)) {
-		if strings.HasPrefix(line, "id: ") {
-			msg.Id = strings.TrimPrefix(line, "id: ")
-		} else if strings.HasPrefix(line, "event: ") {
-			msg.Event = strings.TrimPrefix(line, "event: ")
-		} else if strings.HasPrefix(line, "data: ") {
-			if msg.Data != nil {
-				msg.Data = append(msg.Data, '\n')
-			}
-			msg.Data = append(msg.Data, []byte(strings.TrimPrefix(line, "data: "))...)
+func (cr *chunkedReader) Read(p []byte) (n int, err error) {
+	for {
+		if cr.done {
+			return 0, io.EOF
 		}
+		if cr.cur == nil {
+			nxt := cr.body.Next()
+			if nxt == nil || nxt.IsDone() {
+				cr.done = true
+				return 0, io.EOF
+			}
+			cr.cur = nxt
+		}
+
+		n, err := cr.cur.Read(p)
+		if err == io.EOF {
+			// Exhausted this chunk — try the next one on the next loop.
+			cr.cur = nil
+			if n > 0 {
+				// Return what we read; caller will come back for more.
+				return n, nil
+			}
+			continue
+		}
+		return n, err
 	}
-	return msg, nil
 }

@@ -14,7 +14,7 @@ func (m *memoryBody) Into(t any) error {
 }
 
 func (m *memoryBody) IsStream() bool {
-	return false
+	return true
 }
 
 func (m *memoryBody) Next() Chunk {
