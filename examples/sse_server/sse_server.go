@@ -13,14 +13,14 @@ import (
 func streamingHandler() http.Handler {
 	return func(r http.Request) (http.Response, error) {
 		i := 0
-		return http.NewResponse(status.Ok).BodyStream(sse.Stream(func() (*sse.SseMessage, error) {
+		return http.NewResponse(status.Ok).BodyStream(sse.Stream(func() (*sse.Message, error) {
 			time.Sleep(time.Second)
 			i++
 			if i > 5 {
 				return nil, nil
 			}
 
-			return &sse.SseMessage{
+			return &sse.Message{
 				Id:   fmt.Sprintf("%d", i),
 				Data: []byte("Hello World!"),
 			}, nil

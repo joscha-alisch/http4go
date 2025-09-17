@@ -106,7 +106,7 @@ func (s *stdLibServer) startHttpServer() error {
 			if f, ok := w.(nethttp.Flusher); ok {
 				f.Flush()
 			}
-			if chunk.Done() {
+			if chunk.IsDone() {
 				return
 			}
 		}

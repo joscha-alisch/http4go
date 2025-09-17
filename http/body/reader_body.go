@@ -10,6 +10,10 @@ type readerBody struct {
 	peeked []byte
 }
 
+func (m *readerBody) Into(t any) error {
+	return Into(m, t)
+}
+
 func (m *readerBody) IsStream() bool {
 	return false
 }

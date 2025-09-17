@@ -5,10 +5,9 @@ import (
 )
 
 type Client struct {
-	transport    http.Handler
-	sseTransport http.SseHandler
+	transport http.Handler
 }
 
-func NewClient(transport http.Handler, sseTransport http.SseHandler) Client {
-	return Client{transport: transport, sseTransport: sseTransport}
+func NewClient(transport http.Handler) Client {
+	return Client{transport: transport}
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/joscha-alisch/http4go/http"
+	"github.com/joscha-alisch/http4go/http/sse"
 )
 
 type APIAction[T any] interface {
@@ -13,7 +14,7 @@ type APIAction[T any] interface {
 
 type SSEAPIAction[T any] interface {
 	ToRequest() http.Request
-	ToEvent(message http.SseMessage) (T, error)
+	ToEvent(message sse.Message) (T, error)
 }
 
 func Do[A any](transport http.Handler, action APIAction[A]) (A, error) {
@@ -30,8 +31,13 @@ func DoSse[A any](transport http.Handler, action SSEAPIAction[A]) (next func() (
 		return nil, fmt.Errorf("unexpected status code: %d", resp.GetStatus().Code)
 	}
 
+	nextMessage := sse.StreamFromBody(resp.GetBody())
 	return func() (A, error) {
-
-		return action.ToEvent(http.SseMessage{})
+		msg, err := nextMessage()
+		if err != nil {
+			var zero A
+			return zero, err
+		}
+		return action.ToEvent(*msg)
 	}, nil
 }

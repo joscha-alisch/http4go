@@ -4,7 +4,7 @@ import "io"
 
 type Chunk interface {
 	io.ReadCloser
-	Done() bool
+	IsDone() bool
 	Into(v any) error
 }
 
@@ -13,7 +13,7 @@ type chunk struct {
 	done bool
 }
 
-func (c *chunk) Done() bool {
+func (c *chunk) IsDone() bool {
 	return c.done
 }
 

@@ -11,6 +11,10 @@ type streamingBody struct {
 	peekedIsLast bool
 }
 
+func (m *streamingBody) Into(t any) error {
+	return Into(m, t)
+}
+
 func (m *streamingBody) IsStream() bool {
 	return true
 }

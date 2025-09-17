@@ -3,15 +3,32 @@ package sse
 import (
 	"io"
 	"strings"
+
+	"github.com/joscha-alisch/http4go/http/body"
 )
 
-type SseMessage struct {
+type Message struct {
 	Id    string
 	Event string
 	Data  []byte
 }
 
-func Stream(f func() (*SseMessage, error)) func() (io.ReadCloser, error) {
+func StreamFromBody(body body.Body) func() (*Message, error) {
+	return func() (*Message, error) {
+		bodyChunk := body.Next()
+		if bodyChunk == nil || bodyChunk.IsDone() {
+			return nil, nil
+		}
+
+		msg, err := readMessage(bodyChunk)
+		if err != nil {
+			return nil, err
+		}
+		return msg, nil
+	}
+}
+
+func Stream(f func() (*Message, error)) func() (io.ReadCloser, error) {
 	return func() (io.ReadCloser, error) {
 		msg, err := f()
 		if err != nil {
@@ -45,9 +62,15 @@ func Stream(f func() (*SseMessage, error)) func() (io.ReadCloser, error) {
 	}
 }
 
-func MessageFromChunk(chunk []byte) *SseMessage {
-	msg := &SseMessage{}
-	for line := range strings.Lines(string(chunk)) {
+func readMessage(chunk io.Reader) (*Message, error) {
+	msg := &Message{}
+
+	b, err := io.ReadAll(chunk)
+	if err != nil {
+		return nil, err
+	}
+
+	for line := range strings.Lines(string(b)) {
 		if strings.HasPrefix(line, "id: ") {
 			msg.Id = strings.TrimPrefix(line, "id: ")
 		} else if strings.HasPrefix(line, "event: ") {
@@ -59,5 +82,5 @@ func MessageFromChunk(chunk []byte) *SseMessage {
 			msg.Data = append(msg.Data, []byte(strings.TrimPrefix(line, "data: "))...)
 		}
 	}
-	return msg
+	return msg, nil
 }

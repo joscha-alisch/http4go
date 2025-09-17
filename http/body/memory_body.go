@@ -9,6 +9,10 @@ type memoryBody struct {
 	b []byte
 }
 
+func (m *memoryBody) Into(t any) error {
+	return Into(m, t)
+}
+
 func (m *memoryBody) IsStream() bool {
 	return false
 }

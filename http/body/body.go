@@ -15,6 +15,7 @@ type Body interface {
 	// Peek returns a reader that can be used to read the next chunk of the body without consuming it -
 	// useful for debugging and logging. If the body is not a stream, Peek always returns the full body.
 	Peek() Chunk
+	Into(t any) error
 }
 
 func FromBytes(b []byte) Body {
@@ -39,4 +40,12 @@ func FromReader(r io.Reader) Body {
 
 func FromStream(f func() (io.ReadCloser, error)) Body {
 	return &streamingBody{f: f}
+}
+
+func Into(b Body, t any) error {
+	next := b.Next()
+	if next.IsDone() {
+		return io.EOF
+	}
+	return json.NewDecoder(next).Decode(t)
 }

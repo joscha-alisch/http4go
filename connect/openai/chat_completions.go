@@ -7,6 +7,7 @@ import (
 	"github.com/joscha-alisch/http4go/connect"
 	"github.com/joscha-alisch/http4go/http"
 	"github.com/joscha-alisch/http4go/http/body"
+	"github.com/joscha-alisch/http4go/http/sse"
 	"github.com/joscha-alisch/http4go/http/uri"
 )
 
@@ -42,7 +43,7 @@ func (c ChatCompletionsAction) ToRequest() http.Request {
 		Body(c.Body)
 }
 
-func (c ChatCompletionsAction) ToEvent(message http.SseMessage) (ChatCompletionsChunk, error) {
+func (c ChatCompletionsAction) ToEvent(message sse.Message) (ChatCompletionsChunk, error) {
 	var chunk ChatCompletionsChunk
 	return chunk, json.Unmarshal(message.Data, &chunk)
 }
