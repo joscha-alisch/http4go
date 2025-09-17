@@ -10,12 +10,7 @@ type ServerConfig interface {
 	ToServer(Handler) Server
 }
 
-type SseServerConfig interface {
-	ToSseServer(SseHandler) Server
-}
-
 type PolyServerConfig interface {
 	ServerConfig
-	SseServerConfig
-	ToPolyServer(Handler, SseHandler) Server
+	ToPolyServer(Handler) Server
 }
