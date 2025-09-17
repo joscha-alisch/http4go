@@ -6,42 +6,54 @@ import (
 )
 
 type streamingBody struct {
-	f      func() (io.Reader, error)
-	peeked []byte
+	f            func() (io.ReadCloser, error)
+	peeked       []byte
+	peekedIsLast bool
+}
+
+func (m *streamingBody) IsStream() bool {
+	return true
 }
 
 func (m *streamingBody) Next() Chunk {
 	if m.peeked != nil {
 		c := &chunk{
-			Reader: bytes.NewReader(m.peeked),
-			last:   true,
+			ReadCloser: io.NopCloser(bytes.NewReader(m.peeked)),
+			done:       m.peekedIsLast,
 		}
 		m.peeked = nil
+		m.peekedIsLast = false
 		return c
 	}
 
 	c, err := m.f()
 	if err != nil || c == nil {
-		return nil
+		return &chunk{
+			ReadCloser: io.NopCloser(bytes.NewReader(nil)),
+			done:       true,
+		}
 	}
 
 	return &chunk{
-		Reader: c,
-		last:   true,
+		ReadCloser: c,
+		done:       false,
 	}
 }
 
 func (m *streamingBody) Peek() Chunk {
 	if m.peeked != nil {
 		return &chunk{
-			Reader: bytes.NewReader(m.peeked),
-			last:   true,
+			ReadCloser: io.NopCloser(bytes.NewReader(m.peeked)),
+			done:       m.peekedIsLast,
 		}
 	}
 
 	c, err := m.f()
 	if err != nil || c == nil {
-		return nil
+		return &chunk{
+			ReadCloser: io.NopCloser(bytes.NewReader(nil)),
+			done:       true,
+		}
 	}
 
 	m.peeked, err = io.ReadAll(c)
@@ -50,7 +62,7 @@ func (m *streamingBody) Peek() Chunk {
 	}
 
 	return &chunk{
-		Reader: bytes.NewReader(m.peeked),
-		last:   true,
+		ReadCloser: io.NopCloser(bytes.NewReader(m.peeked)),
+		done:       false,
 	}
 }

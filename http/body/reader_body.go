@@ -6,35 +6,57 @@ import (
 )
 
 type readerBody struct {
-	r io.Reader
+	r      io.Reader
+	peeked []byte
+}
+
+func (m *readerBody) IsStream() bool {
+	return false
 }
 
 func (m *readerBody) Next() Chunk {
 	if m.r == nil {
-		return nil
+		return &chunk{
+			ReadCloser: io.NopCloser(nil),
+			done:       true,
+		}
 	}
 
 	r := m.r
 	m.r = nil
+	m.peeked = nil
 
 	return &chunk{
-		Reader: r,
-		last:   true,
+		ReadCloser: io.NopCloser(r),
+		done:       false,
 	}
 }
 
 func (m *readerBody) Peek() Chunk {
-	if m.r == nil {
-		return nil
+	if m.peeked != nil {
+		return &chunk{
+			ReadCloser: io.NopCloser(bytes.NewReader(m.peeked)),
+			done:       false,
+		}
 	}
+
+	if m.r == nil {
+		return &chunk{
+			ReadCloser: io.NopCloser(nil),
+			done:       true,
+		}
+	}
+
 	peeked, err := io.ReadAll(m.r)
 	if err != nil {
 		return nil
 	}
 
+	m.peeked = peeked
+
 	m.r = bytes.NewReader(peeked)
 	return &chunk{
-		Reader: bytes.NewReader(peeked),
-		last:   true,
+		ReadCloser: io.NopCloser(bytes.NewReader(peeked)),
+		done:       false,
 	}
 }

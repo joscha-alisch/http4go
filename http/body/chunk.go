@@ -3,18 +3,18 @@ package body
 import "io"
 
 type Chunk interface {
-	io.Reader
-	IsLast() bool
+	io.ReadCloser
+	Done() bool
 	Into(v any) error
 }
 
 type chunk struct {
-	io.Reader
-	last bool
+	io.ReadCloser
+	done bool
 }
 
-func (c *chunk) IsLast() bool {
-	return c.last
+func (c *chunk) Done() bool {
+	return c.done
 }
 
 func (c *chunk) Into(v any) error {

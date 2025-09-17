@@ -6,6 +6,8 @@ import (
 )
 
 type Body interface {
+	IsStream() bool
+
 	// Next returns the next chunk of the body, consuming it.
 	// If the body is not a stream, Next always returns the full body.
 	Next() Chunk
@@ -35,6 +37,6 @@ func FromReader(r io.Reader) Body {
 	return &readerBody{r: r}
 }
 
-func FromStream(f func() (io.Reader, error)) Body {
+func FromStream(f func() (io.ReadCloser, error)) Body {
 	return &streamingBody{f: f}
 }

@@ -36,10 +36,16 @@ type Response interface {
 	RemoveHeaders(prefix string) Response
 
 	// Body sets the body of this message.
-	Body(body io.ReadCloser) Response
+	Body(body body.Body) Response
 
 	// BodyString sets the body of this message from a string.
 	BodyString(body string) Response
+
+	BodyBytes(body []byte) Response
+
+	BodyStream(func() (io.ReadCloser, error)) Response
+
+	BodyReader(reader io.ReadCloser) Response
 
 	// GetHeaders returns all headers of this message.
 	GetHeaders() Headers
@@ -60,6 +66,21 @@ type Response interface {
 type MemoryResponse struct {
 	memoryMessage
 	status status.Status
+}
+
+func (r MemoryResponse) BodyBytes(body []byte) Response {
+	r.memoryMessage = r.memoryMessage.BodyBytes(body)
+	return r
+}
+
+func (r MemoryResponse) BodyStream(f func() (io.ReadCloser, error)) Response {
+	r.memoryMessage = r.memoryMessage.BodyStream(f)
+	return r
+}
+
+func (r MemoryResponse) BodyReader(reader io.ReadCloser) Response {
+	r.memoryMessage = r.memoryMessage.BodyReader(reader)
+	return r
 }
 
 func NewResponse(status status.Status) Response {
@@ -114,7 +135,7 @@ func (r MemoryResponse) RemoveHeaders(prefix string) Response {
 	return r
 }
 
-func (r MemoryResponse) Body(body io.ReadCloser) Response {
+func (r MemoryResponse) Body(body body.Body) Response {
 	r.memoryMessage = r.memoryMessage.Body(body)
 	return r
 }

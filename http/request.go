@@ -42,10 +42,14 @@ type Request interface {
 	RemoveHeaders(prefix string) Request
 
 	// Body sets the body of this message.
-	Body(body io.ReadCloser) Request
+	Body(body body.Body) Request
+
+	BodyReader(r io.ReadCloser) Request
 
 	// BodyString sets the body of this message from a string.
 	BodyString(body string) Request
+
+	BodyJson(v any) (Request, error)
 
 	// GetHeaders returns all headers of this message.
 	GetHeaders() Headers
@@ -56,7 +60,7 @@ type Request interface {
 	// GetHeaderValues returns all values of the given header name.
 	GetHeaderValues(name string) []string
 
-	// GetBody returns the body of this message as an io.Reader.
+	// GetBody returns the body of this message as an io.ReadCloser.
 	GetBody() body.Body
 
 	// Close closes the body of this message.
@@ -112,14 +116,28 @@ func (r MemoryRequest) RemoveHeaders(prefix string) Request {
 	return r
 }
 
-func (r MemoryRequest) Body(body io.ReadCloser) Request {
+func (r MemoryRequest) Body(body body.Body) Request {
 	r.memoryMessage = r.memoryMessage.Body(body)
+	return r
+}
+
+func (r MemoryRequest) BodyReader(reader io.ReadCloser) Request {
+	r.memoryMessage = r.memoryMessage.BodyReader(reader)
 	return r
 }
 
 func (r MemoryRequest) BodyString(body string) Request {
 	r.memoryMessage = r.memoryMessage.BodyString(body)
 	return r
+}
+
+func (r MemoryRequest) BodyJson(v any) (Request, error) {
+	mm, err := r.memoryMessage.BodyJson(v)
+	if err != nil {
+		return r, err
+	}
+	r.memoryMessage = mm
+	return r, nil
 }
 
 func (r MemoryRequest) GetMethod() method.Method {

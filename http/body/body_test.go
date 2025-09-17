@@ -50,18 +50,19 @@ func TestBody(t *testing.T) {
 		},
 		{
 			name: "reader stream",
-			body: FromStream(func() func() (io.Reader, error) {
+			body: FromStream(func() func() (io.ReadCloser, error) {
 				i := 0
-				return func() (io.Reader, error) {
-					if i > 0 {
+				return func() (io.ReadCloser, error) {
+					if i > 1 {
 						return nil, nil
 					}
 					i++
-					return bytes.NewReader([]byte("stream body")), nil
+					return io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("stream body %d", i)))), nil
 				}
 			}()),
 			expected: []string{
-				"stream body",
+				"stream body 1",
+				"stream body 2",
 			},
 		},
 	}
@@ -75,32 +76,31 @@ func TestBody(t *testing.T) {
 
 func testBody(t *testing.T, b Body, expected []string) {
 	for i, s := range expected {
-		shouldBeLast := i == len(expected)-1
 		t.Run(fmt.Sprintf("[%d] First Peek", i), func(t *testing.T) {
 			chunk := b.Peek()
-			assert.Equal(t, shouldBeLast, chunk.IsLast())
+			assert.Equal(t, false, chunk.Done())
 			assert.Equal(t, s, readAll(t, chunk))
 		})
 
 		t.Run(fmt.Sprintf("[%d] Second Peek", i), func(t *testing.T) {
 			chunk := b.Peek()
-			assert.Equal(t, shouldBeLast, chunk.IsLast())
+			assert.Equal(t, false, chunk.Done())
 			assert.Equal(t, s, readAll(t, chunk))
 		})
 
 		t.Run(fmt.Sprintf("[%d] Next", i), func(t *testing.T) {
 			chunk := b.Next()
-			assert.Equal(t, shouldBeLast, chunk.IsLast())
+			assert.Equal(t, false, chunk.Done())
 			assert.Equal(t, s, readAll(t, chunk))
 		})
 
 	}
 
-	t.Run("After last it's nil", func(t *testing.T) {
+	t.Run("After done it's nil", func(t *testing.T) {
 		chunk := b.Peek()
-		assert.Nil(t, chunk, "expected no more chunks")
+		assert.True(t, chunk.Done())
 		chunk = b.Next()
-		assert.Nil(t, chunk, "expected no more chunks")
+		assert.True(t, chunk.Done())
 	})
 }
 

@@ -24,7 +24,7 @@ func (m memoryMessage) ToMessage(includeStream bool) string {
 		return fmt.Sprintf("%s<stream>", headers)
 	}
 
-	return fmt.Sprintf("%s", headers, m.body.String())
+	return fmt.Sprintf("%s%s", headers, m.body.Peek())
 }
 
 func (m memoryMessage) Version(version string) memoryMessage {
@@ -43,7 +43,7 @@ func (m memoryMessage) Headers(headers Headers) memoryMessage {
 }
 
 func (m memoryMessage) ReplaceHeader(name string, value string) memoryMessage {
-	m.RemoveHeader(name)
+	m = m.RemoveHeader(name)
 	m.headers = append(m.headers, Header{Name: name, Value: value})
 	return m
 }
@@ -76,14 +76,23 @@ func (m memoryMessage) RemoveHeaders(prefix string) memoryMessage {
 	return m
 }
 
-func (m memoryMessage) Body(r io.ReadCloser) memoryMessage {
-	m.body = body.FromStream(r)
+func (m memoryMessage) Body(b body.Body) memoryMessage {
+	m.body = b
 	return m
 }
 
 func (m memoryMessage) BodyString(s string) memoryMessage {
 	m.body = body.FromString(s)
 	return m
+}
+
+func (m memoryMessage) BodyJson(v any) (memoryMessage, error) {
+	b, err := body.FromJson(v)
+	if err != nil {
+		return m, err
+	}
+	m.body = b
+	return m, nil
 }
 
 func (m memoryMessage) GetHeaders() Headers {
@@ -105,9 +114,6 @@ func (m memoryMessage) GetBody() body.Body {
 }
 
 func (m memoryMessage) Close() error {
-	if m.body != nil {
-		return m.body.Close()
-	}
 	return nil
 }
 
@@ -118,4 +124,19 @@ func (m memoryMessage) GetHeader(name string) string {
 		}
 	}
 	return ""
+}
+
+func (m memoryMessage) BodyReader(reader io.ReadCloser) memoryMessage {
+	m.body = body.FromReader(reader)
+	return m
+}
+
+func (m memoryMessage) BodyBytes(bytes []byte) memoryMessage {
+	m.body = body.FromBytes(bytes)
+	return m
+}
+
+func (m memoryMessage) BodyStream(f func() (io.ReadCloser, error)) memoryMessage {
+	m.body = body.FromStream(f)
+	return m
 }

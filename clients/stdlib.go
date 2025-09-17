@@ -16,16 +16,24 @@ var StdLib = http.Handler(func(r http.Request) (http.Response, error) {
 		Method: r.GetMethod(),
 		URL:    urlFromUri(r.GetUri()),
 		Header: r.GetHeaders().AsMap(),
-		Body:   r.GetBody(),
+		Body:   r.GetBody().Next(),
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	var h http.Headers
+
+	for name, values := range resp.Header {
+		for _, value := range values {
+			h = append(h, http.Header{Name: name, Value: value})
+		}
+	}
+
 	return http.NewResponse(status.Status{
 		Code: resp.StatusCode,
 		Text: resp.Status,
-	}).Body(resp.Body), nil
+	}).BodyReader(resp.Body).Headers(h), nil
 })
 
 func urlFromUri(u uri.Uri) *url.URL {
